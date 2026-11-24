@@ -116,14 +116,14 @@ export function viewsShowAction(views: ViewHost.Shape, labels: ReadonlyMap<strin
   const action: Action = {
     name: "VIEWS",
     similes: ["VIEWS_SHOW", "OPEN_VIEW", "NAVIGATE_VIEW"],
-    description: "Show one of the owner's views, named by its id, label or alias, on the renderer of this turn. Navigation only: it does not read or change the view's records. To open one saved note's editor, first find exactly that note with NOTES, then show Notes with its noteId; if several notes match, ask which one.",
+    description: "Show one of the owner's views, named by its id, label or alias, on the renderer of this turn. Navigation only: it does not read or change the view's records. On a renderer that opens the Notes editor, to open one saved note's editor, first find exactly that note with NOTES, then show Notes with its noteId; if several notes match, ask which one.",
     roleGate: { minRole: "OWNER" },
     parameters: [
       { name: "action", description: "show", required: false, schema: { type: "string", enum: ["show"] } },
       { name: "view", description: "The view's id, label or alias", required: true, schema: { type: "string" } },
       {
         name: "noteId",
-        description: "Only with view Notes, when the owner asked to open one particular saved note: the exact noteId of the one note a NOTES read or save returned. Never derived from a title. Omit to show the Notes list or when the owner only asked to read a note.",
+        description: "Only with view Notes, on a renderer that opens the Notes editor, when the owner asked to open one particular saved note: the exact noteId of the one note a NOTES read or save returned. Never derived from a title. Omit to show the Notes list or when the owner only asked to read a note.",
         required: false,
         schema: { type: "string", pattern: noteIdPattern.source },
       },
