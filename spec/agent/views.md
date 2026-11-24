@@ -176,10 +176,11 @@ It prepares with a fresh UUID, refuses unless the returned binding is
 exactly its own, and returns `values {mode: "show", viewId, viewPath,
 viewType: "gui", label, completedActionDelivered: false,
 completedActionHandoffId, navigationPrepared: true, navigationBinding}`
-and no other key (core views parses them). The turn's completed action
-includes the validated prepared handoff in its reply's action data, so the
-renderer can claim the request using that exact binding. A refusal carries
-no prepared handoff.
+and no other key but the `noteId` of the next rule (core views parses
+them). The turn's completed action includes the validated prepared handoff
+in its reply's action data, with that `noteId` when the show named one, so
+the renderer can claim the request using that exact binding. A refusal
+carries no prepared handoff.
 
 ```quint
 pure def targets(h: ViewHost, target: str): List[DeclaredView] = h.views.select(d => namesOf(d).includes(target))
@@ -188,6 +189,35 @@ pure def canShowView(h: ViewHost, requestId: str, clientId: str, target: str): b
 pure def showView(h: ViewHost, requestId: str, clientId: str, target: str): ViewHost =
   prepareNavigation(h, requestId, clientId, targets(h, target).nthOr(0, noView).viewId)
 pure val targetValues = Set("Notes", "home", "nowhere")
+```
+
+### A show of Notes may name one saved note, only on a renderer that opens its editor and only while the agent's Notes hold it
+
+When the owner asks to open a particular saved note, by its title, as
+"my last note" or as a note named earlier, the show action takes that
+note's exact `noteId`, copied from a NOTES read or save that found exactly
+that one note; a title is never taken for an id, and several matching
+notes are a question to the owner, not a show. The id matches
+`^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$`. A show with a `noteId` is refused
+before anything is prepared unless the name resolves to the `notes` view,
+the turn's metadata says `notesEditorNavigation: 1` (its renderer opens a
+saved note's editor and confirms the switch only when that exact note is in
+front), and the current snapshot of the agent's Notes service holds a saved
+note with exactly that id; a Notes service that is missing or cannot be
+read refuses the show as unavailable. The prepared values then also carry
+`noteId`. A show without a `noteId` opens the Notes list as before, and a
+show only to read or summarise a note names none.
+
+```quint
+type NoteTarget = NoteOpens | NoteOnlyInNotes | NoteEditorUnsupported | NotesUnreadable | NoteNotSaved
+pure def noteTarget(viewId: str, advertised: bool, readable: bool, saved: bool): NoteTarget =
+  if (viewId != "notes") NoteOnlyInNotes
+  else if (not(advertised)) NoteEditorUnsupported
+  else if (not(readable)) NotesUnreadable
+  else if (not(saved)) NoteNotSaved
+  else NoteOpens
+pure def lawANoteOpensOnlyInNotesOnARendererThatOpensIt(viewId: str, advertised: bool, readable: bool, saved: bool): bool =
+  noteTarget(viewId, advertised, readable, saved) == NoteOpens iff (viewId == "notes" and advertised and readable and saved)
 ```
 
 ### A claim names its request's exact binding and succeeds once
