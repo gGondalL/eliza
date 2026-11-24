@@ -302,3 +302,25 @@ it.effect('A note show with no Notes service to read is refused as unavailable (
   const refused = try showNote(agent, turn({ viewClientId: "c4", viewDelivery: "completed-action", notesEditorNavigation: 1 }), "notes", "note-groceries")
   try Effect.try(() => assert.deepStrictEqual([refused.success, refused.text], [false, "Saved Notes are unavailable, so the note was not opened."]))
 }, 120_000)
+
+it.live('A chat reply hands its renderer the exact saved note it prepared (spec/agent/views.md, "The agent prepares a navigation only for the renderer bound to its turn and one view its name resolves to")', effect () => {
+  const cloud = try cloudFake(deviceKey)
+  const agent = try startInProcess({
+    launch: { ...withNotes.launch, callerRole: "owner", backend: { kind: "cloud", origin: cloud.origin }, allowed: ["REPLY", "IGNORE", "NONE", "VIEWS"] },
+    frame: { credential: { version: 1, value: deviceKey } }, bundled: withNotes.bundled,
+  })
+  try host("notes fixture start", () => agent.agent.runtime.getServiceLoadPromise("notes"))
+  const opened = try ask(agent, { method: "POST", path: "/api/conversations", body: {} })
+  const { id } = (opened.body as { conversation: { id: string } }).conversation
+  const body = { text: "Open my Groceries note.", metadata: { viewDelivery: "completed-action", viewClientId: "c5", notesEditorNavigation: 1 } }
+  try Effect.sync(() => cloud.script(toolCalls("", { name: "VIEWS", arguments: { action: "show", view: "Notes", noteId: "note-groceries" } }), text("Opening Groceries.")))
+  const reply = try ask(agent, { method: "POST", path: `/api/conversations/${id}/messages`, headers: { "x-elizaos-client-id": "c5" }, body })
+  const completed = (reply.body as { actionResults: readonly { action: string; data: { values?: { noteId?: string; navigationBinding?: ViewBinding } } }[] }).actionResults
+  const values = completed.find(({ action }) => action === "VIEWS")?.data.values
+  try Effect.try(() => {
+    assert.strictEqual(reply.status, 200)
+    assert.strictEqual(values?.noteId, "note-groceries")
+    assert.strictEqual(values?.navigationBinding?.viewId, "notes")
+    assert.strictEqual(values?.navigationBinding?.clientId, "c5")
+  })
+}, 120_000)
