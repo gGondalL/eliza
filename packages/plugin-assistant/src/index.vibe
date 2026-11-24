@@ -1,6 +1,6 @@
 // spec/assistant/reminders.md, "Story: Create the reminder I asked for, and only that"; spec/assistant/goals.md, "Story: Keep my goals and check in on them when I asked"; spec/assistant/todos.md, "Story: Keep my to-do list as I asked, once"; spec/assistant/routines.md, "Story: Keep my habits on their cadence"; spec/assistant/checkin.md, "Story: Summarize my day only from a real answer"; spec/assistant/timezone.md, "Story: Run my day on my own clock"
 import { Service, type EvaluatorRunResult, type IAgentRuntime, type Provider } from "@elizaos/core"
-import type { AgentPlugin } from "@elizaos/agent"
+import type { AgentPlugin } from "@elizaos/agent-host"
 import { checkinKind, deliverCheckin } from "./checkin.vibe"
 import { dossierRoutes } from "./dossier.vibe"
 import { runEvaluators, type EvaluatorRun } from "./evaluators/runner.vibe"
@@ -20,6 +20,81 @@ export { followupTick, type TickReport } from "./followups.vibe"
 export { ownerActivity, setDossier, dossierControl, presentDossier } from "./dossier.vibe"
 export { BriefSources, PriorityModel, ownerBrief, rankOwnerEntries } from "./owner-brief.vibe"
 export { BillEvidencePort, keepObservedBill, findBillReceipt } from "./bill-evidence.vibe"
+export {
+  reminderKind,
+  checkOriginalMessage,
+  createReminder,
+  reminderReply,
+  deliverReminder,
+  liveReminders,
+  answerReminder,
+  requestOf,
+  ownerRemindersAction,
+  ownerRemindersProvider,
+  type ReminderRequest,
+  type ReminderOutcome,
+} from "./reminders.vibe"
+export {
+  ownerCalendarZone,
+  ownerClockAt,
+  ownerFacts,
+  recordTravel,
+  resolveZone,
+  stateOwnerZone,
+  statedName,
+  statedZone,
+  clockCapability,
+  clockRepeatCapability,
+  clockDayNames,
+  clockHandoffCapabilities,
+  isClockHandoffOperation,
+  clockHandoffDispatch,
+  describeClockDays,
+  describeClockHandoff,
+  normalizeClockTimeZone,
+  currentClockTimeZone,
+  ClockZoneChanged,
+  checkClockHandoffTimeZone,
+  ClockReceiptRefused,
+  clockHandoffReceipt,
+  buildClockHandoffRequest,
+  type OwnerFacts,
+  type Travel,
+  type ClockHandoffOperation,
+  type ClockDay,
+  type ClockHandoffResult,
+  type ClockHandoffHostSupport,
+  type ClockHandoffRequest,
+  type ClockHandoffForm,
+  type FormRefusal,
+} from "./clock.vibe"
+export {
+  foregroundReviewTypes,
+  isForegroundReviewType,
+  readForegroundReviewOperation,
+  isForegroundReviewOperation,
+  foregroundReviewOperationAvailable,
+  ReviewResultRefused,
+  foregroundReviewResult,
+  type ForegroundReviewOperation,
+} from "./review.vibe"
+export {
+  goalCheckinKind,
+  listGoals,
+  changeGoal,
+  deliverGoalCheckin,
+  ownerGoalsAction,
+  ownerGoalsProvider,
+  type GoalRecord,
+} from "./goals.vibe"
+export {
+  affirms,
+  currentTodos,
+  renderTodos,
+  changeTodos,
+  todosAction,
+  currentTodosProvider,
+} from "./todos.vibe"
 
 export const personalAssistantPluginName = "@elizaos/plugin-personal-assistant"
 
@@ -77,7 +152,6 @@ export class PersonalAssistantService extends Service {
     return new PersonalAssistantService(runtime)
   }
 
-  /** The zone the owner's calendar reads: the zone the owner stated, else the agent's. */
   ownerCalendarZone(): Promise<string> {
     return onAgent(this.runtime, ownerCalendarZone())
   }

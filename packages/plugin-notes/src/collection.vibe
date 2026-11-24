@@ -1,10 +1,10 @@
 // spec/notes/records.md, "Every commit advances the revision once, and a replacement needs the revision it was read at"; spec/notes/records.md, "A creation the client names is made once, and every record is one bounded note"; spec/notes/records.md, "The agent reads and changes Notes only for the owner, on the owner's own words in the bound request"; spec/notes/trash.md, "Canonical Trash restores the exact deleted ID against the current revision"; spec/notes/trash.md, "Erase and expiry need the owner's three-day choice, a current review, and no shared recording"; spec/notes/trash.md, "Fresh Notes references and the exact audio operation receipt govern cleanup"
 import { canonicalEraseAllowed, canonicalRestore, canonicalRestoreOpen, canonicalSweepAllowed, type CanonicalTrashEntry } from "../gen/notes__trash.effect.vibe"
 import { creationReturnsExisting, deleteByNameAllowed, literalEditAdmitted, noteRecordAdmitted, revisionAdmits } from "../gen/notes__records.effect.vibe"
-import { authoredNoteText, editAuthoredNoteFormat, type AuthoredNoteEdit } from "./format.vibe"
+import { authoredNoteText, editAuthoredNoteFormat, type AuthoredNoteEdit } from "@elizaos/plugin-notes-client"
 import { lookupMatches, noteContentKey, titleAppearsAsNamedPhrase, type NoteSelector } from "./lookup.vibe"
-import { noteLimits, recordingIdPattern, type CreateRequest, type ImportReceipt, type UpdateRequest } from "./records.schema.vibe"
-import type { NoteFormat, NotesSnapshot, NotesTrashErase, NotesTrashRecordingCleanup, StickyColor, StickyNote, TrashedNote } from "./types.vibe"
+import { noteLimits, recordingIdPattern, type CreateRequest, type ImportReceipt, type UpdateRequest } from "@elizaos/plugin-notes-client"
+import type { NoteFormat, NotesSnapshot, NotesTrashErase, NotesTrashRecordingCleanup, StickyColor, StickyNote, TrashedNote } from "@elizaos/plugin-notes-client"
 
 export interface NotesDocument {
   schemaVersion: 1

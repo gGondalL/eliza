@@ -1,8 +1,11 @@
 // spec/files/workspace.md, "Story: Keep the agent's working files inside its workspace"
-import { Service, resolveStateDir, type IAgentRuntime, type Plugin } from "@elizaos/core"
+import { Service, type IAgentRuntime, type Plugin } from "@elizaos/core"
+import { resolveStateDir } from "@elizaos/core-node"
 import { workspace, workspaceRoot, type DirectoryEntry, type FileEncoding } from "./workspace.vibe"
 
 export { normalizeWorkspacePath, workspace, workspaceRoot, WorkspaceRefused, type DirectoryEntry, type FileEncoding } from "./workspace.vibe"
+export * from "./storage/local-volume.vibe"
+export * from "./documents/pdf-interpretation.vibe"
 
 export const DEVICE_FILESYSTEM_SERVICE_TYPE = "device_filesystem"
 

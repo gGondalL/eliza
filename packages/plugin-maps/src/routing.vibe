@@ -1,7 +1,7 @@
 // spec/maps/routing.md, "A plain Maps request of the owner's own chat turn goes to the Maps action for its shape"; spec/maps/routing.md, "A choice reply answers only the open question of the same conversation, within its options and ten minutes"
 import { containsResourceAddress, registerDirectActionRoutingRule, type IAgentRuntime, type Memory } from "@elizaos/core"
 import { choiceBinds, mapsRouteOf, type RequestShape, type RoutedTo } from "../gen/maps__routing.effect.vibe"
-import type { AgentPlaceRef } from "./client/device-navigation.vibe"
+import type { AgentPlaceRef } from "@elizaos/plugin-maps-client"
 
 const courtesy = String.raw`(?:(?:please|hey|ok(?:ay)?|so)[,\s]+)*(?:(?:can|could|would|will)\s+you\s+)?(?:please\s+)?`
 const travelMode = String.raw`(?:driving|walking|cycling|bike|transit)`

@@ -1,11 +1,11 @@
 // spec/agent/plugins/profile.md, "The worker never receives the credential, the launch token or the storage key"; spec/workflow/execution.md, "A wakeup reserves the earliest due attempt for a persisted run"; spec/core/occurrenceWindow.md, "An occurrence more than thirty minutes past its scheduled instant is missed, and stays missed"
 import { agentProcessStartedAtMs, computeNextCronRunAtMs, ModelType, NotificationService, type IAgentRuntime, type Task, type UUID } from "@elizaos/core"
-import { cloudServiceType, type CloudLinkService } from "@elizaos/agent"
-import { createCloudClient } from "@elizaos/cloud/client"
-import type { HostedNativeSelection } from "./contract/digest.vibe"
+import { cloudServiceType, type CloudLinkService } from "@elizaos/agent-host"
+import { createCloudClient } from "@elizaos/cloud"
+import type { HostedNativeSelection } from "@elizaos/plugin-workflow-client"
 import type { ManagedGoogleReads } from "./service/google.vibe"
-import type { PhoneDeviceTarget } from "./contract/phone.vibe"
-import type { WorkflowDeviceBinding, WorkflowDeviceOperation } from "./contract/device.vibe"
+import type { PhoneDeviceTarget } from "@elizaos/plugin-workflow-client"
+import type { WorkflowDeviceBinding, WorkflowDeviceOperation } from "@elizaos/plugin-workflow-client"
 import type { ParentMessage, WorkerMessage } from "./worker/protocol.vibe"
 import {
   WorkflowDeviceFailed, WorkflowModelFailed, WorkflowScheduleUnavailable, WorkflowWorkerUnavailable,

@@ -4,6 +4,9 @@ import { browserAction } from "./native-browser.vibe"
 
 export { BROWSER_VIEW, NativeBrowser, browserAction, browserViewAsker, historyActionResult, viewNativeBrowser } from "./native-browser.vibe"
 export type { BrowserFailureCode, BrowserViewAsked, BrowserViewAsker, BrowserViewGrant, BrowserViewWait, HistoryOutcome, HistoryRequest } from "./native-browser.vibe"
+export * from "./contract.vibe"
+export * from "./grounding.vibe"
+export * from "./native-command.vibe"
 
 export const browserPlugin: Plugin = {
   name: "@elizaos/plugin-browser",

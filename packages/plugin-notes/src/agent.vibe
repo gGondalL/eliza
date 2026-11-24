@@ -1,17 +1,16 @@
 // spec/notes/records.md, "Story: Keep my notes as one collection the agent edits only as I asked"; spec/notes/records.md, "A turn's Notes classification narrows what Notes may write and never grants a write"; spec/notes/records.md, "Story: Keep the notes I saved before this version"; spec/notes/records.md, "The agent reads and changes Notes only for the owner, on the owner's own words in the bound request"; spec/notes/trash.md, "Story: Recover a deleted note"; spec/notes/trash.md, "Story: Let deleted notes expire after three days when I choose that"; spec/notes/trash.md, "The proof of erase comes from the service's own verifier, else the host's verifier found when the cleanup is acknowledged, and only a literal true is proof"; spec/notes/organize.md, "A folder is named by a bounded name that is unique in the device's list"
-import type { AgentModule, AgentPlugin, ModuleFactory } from "@elizaos/agent"
-import type { LocalRoute, RouteInput } from "@elizaos/agent/routes"
+import type { AgentModule, AgentPlugin, LocalRoute, ModuleFactory, RouteInput } from "@elizaos/agent-host"
 import type { Action, ActionResult, ContextDefinition, Memory, NotesRequestOperation, Provider, ProviderResult, ViewCapability, ViewDeclaration } from "@elizaos/core"
 import type { NoteTarget, NotesQuery } from "./collection.vibe"
 import { notesNamedIn, ownerRequestText } from "./lookup.vibe"
-import { findNoteFolder, noteFolderId, readNoteFolders } from "./organize.vibe"
-import { noteIdPattern } from "./records.schema.vibe"
+import { findNoteFolder, noteFolderId, readNoteFolders } from "@elizaos/plugin-notes-client"
+import { noteIdPattern } from "@elizaos/plugin-notes-client"
 import { namedNoteReadEvaluator, notesRequestEffectField, notesViewOperation, registerNotesDirectRoutes, restrictNotesWrite } from "./request-effect.vibe"
 import {
   notesCollection, notesServiceClass, notesStateUpdatedEvent, runtimeNotesHost,
   type NotesCollection, type NotesFailure, type NotesOptions,
 } from "./service.vibe"
-import { projectNoteForModel, reconstructNoteContent, type NotesSnapshot, type StickyNote } from "./types.vibe"
+import { projectNoteForModel, reconstructNoteContent, type NotesSnapshot, type StickyNote } from "@elizaos/plugin-notes-client"
 
 module edge {
   import { randomUUID } from "node:crypto"

@@ -1,7 +1,7 @@
 // spec/maps/cloudConnection.md, "Story: Keep Cloud Maps on the account that requested it"
 import { type Clock, Effect } from "effect";
-import { CloudError } from "@elizaos/cloud/client";
-import type { MapsCloud } from "../../src/client/cloud-provider.vibe";
+import { CloudError } from "@elizaos/cloud";
+import type { MapsCloud } from "@elizaos/plugin-maps-client";
 import { gate, type Gate } from "./gates.ts";
 
 export const offer = {

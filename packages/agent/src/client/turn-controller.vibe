@@ -4,10 +4,12 @@ import {
   type Attempt, type ClientCall, type ClientStep, type Event, type StopReceipt, type StreamEnd, type TurnClient,
 } from "../../gen/agent__client__turns.effect.vibe"
 import type { RuntimeStream } from "./index.vibe"
-import type { TaskPresentation } from "../tasks/chat-task.vibe"
+import type { Presentation } from "../../gen/agent__tasks.ts"
 import { ActionResultFrame, PlanAction, ProviderWait } from "./reply-frame.schema.vibe" // eslint-disable-line @typescript-eslint/consistent-type-imports -- BufferedReply uses these Vibe schemas as runtime codecs.
 import { readReplyStream, type ReplyOutcome, type ReplyStreamHooks, type StreamedReply } from "./stream-reader.vibe"
 import { newClientMessageId, type ClientMessageId } from "./stopped-turn.vibe"
+
+export type TaskPresentation = Omit<Extract<Presentation, { tag: "Presented" }>, "tag">
 
 export schema ConversationRecord { readonly id: Schema.NonEmptyString; readonly roomId: Schema.NonEmptyString }
 schema Created { readonly conversation: ConversationRecord }

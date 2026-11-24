@@ -1,7 +1,7 @@
 // spec/workflow/admission.md, "Activation commits against the exact reviewed version and names the version it produced"; spec/workflow/lifecycle.md, "A retained mutation has the same receipt after later definition changes"; spec/workflow/index.md, "A saved request and an admitted execution preserve their separate identities"; spec/workflow/index.md, "A chat change follows the owner's own command and refuses a different operation"
 import { extractUserText, incomingMessagePersistenceSnapshot, unwrapUserMessageText, type Action, type ActionResult, type EffectReceipt, type HandlerCallback, type IAgentRuntime, type Memory, type Provider } from "@elizaos/core"
 import { chatBinding } from "../gen/workflow.effect.vibe"
-import { workflowSha, workflowUuid } from "./contract/phone.vibe"
+import { workflowSha, workflowUuid } from "@elizaos/plugin-workflow-client"
 import { WorkflowRefused, type WorkflowService } from "./service/workflows.vibe"
 import type { hostedDigests } from "./service/digests.vibe"
 import type { generatedWorkflows } from "./service/generated.vibe"

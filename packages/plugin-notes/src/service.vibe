@@ -6,10 +6,10 @@ import {
   acknowledgeIn, clearIn, createIn, deleteIn, eraseIn, listIn, moveIn, NotesRefused, restoreIn, sameCleanup, updateIn,
   type Instant, type NoteTarget, type NotesQuery,
 } from "./collection.vibe"
-import { CleanupReceipt, CreateRequest, RestoreRequest, Revision, TrashErase, UpdateRequest } from "./records.schema.vibe"
+import { CleanupReceipt, CreateRequest, RestoreRequest, Revision, TrashErase, UpdateRequest } from "@elizaos/plugin-notes-client"
 import type { PriorDocumentText } from "./prior.vibe"
 import { cacheStorage, notesStore, NotesUnavailable, type Committed, type NotesStorage } from "./store.vibe"
-import type { NotesSnapshot, NotesTrashRecordingCleanup, StickyNote } from "./types.vibe"
+import type { NotesSnapshot, NotesTrashRecordingCleanup, StickyNote } from "@elizaos/plugin-notes-client"
 
 module edge {
   import { createHash, randomUUID } from "node:crypto"

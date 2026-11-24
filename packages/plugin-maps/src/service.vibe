@@ -1,9 +1,9 @@
 // spec/maps/cloudConnection.md, "Maps requests and tiles retain the captured account through completion"; spec/maps/attribution.md, "Only the reply to the latest request, for the current view, is shown"; spec/cloud/services/maps.md, "Every operation except capabilities and viewport needs an idempotency key and runs over one hold of the calling credential"
-import type { CloudLinkReply, CloudLinkRequest } from "@elizaos/agent"
-import { readCloudError } from "@elizaos/cloud/client"
-import { cloudMapsFailure } from "./client/cloud-provider.vibe"
-import { boundedText, type Coordinate, MapsFailure, place, route, TravelMode, type Place, type Route } from "./client/contracts.vibe"
-import type { AgentPlaceRef } from "./client/device-navigation.vibe"
+import type { CloudLinkReply, CloudLinkRequest } from "@elizaos/agent-host"
+import { readCloudError } from "@elizaos/cloud"
+import { cloudMapsFailure } from "@elizaos/plugin-maps-client"
+import { boundedText, type Coordinate, MapsFailure, place, route, TravelMode, type Place, type Route } from "@elizaos/plugin-maps-client"
+import type { AgentPlaceRef } from "@elizaos/plugin-maps-client"
 
 module node {
   /** @throws {never} */
