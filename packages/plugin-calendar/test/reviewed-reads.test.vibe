@@ -1,7 +1,7 @@
 // spec/calendar/reviewedReads.md, "Story: Share only the exact current Calendar information I reviewed"; spec/calendar/reviewedReads.md, "Story: Propose on my phone only the Calendar request I made"; spec/calendar/readClock.md, "Story: See and create times in the zone I am asking about"
 import { assert, it } from "@effect/vitest"
 import type { IAgentRuntime, UUID } from "@elizaos/core"
-import { negotiation, readOperation, validate, type CheckedOperation, type DeviceTurn } from "@elizaos/agent/device-actions"
+import { negotiation, readOperation, validate, type CheckedOperation, type DeviceTurn } from "@elizaos/agent"
 import { calendarProposalFamily } from "../src/plugin/device-proposals.vibe"
 import { machine } from "../gen/calendar__reviewedReads.effect.vibe"
 import { createNeedsConfirmation, createTimeZone, createYear, createdUtcInstant, displayDay, displayWallTime, buildUtcDateFromLocalParts,

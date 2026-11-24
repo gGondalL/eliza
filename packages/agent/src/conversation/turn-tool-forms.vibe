@@ -1,0 +1,13 @@
+// spec/agent/conversation/planning.md, "Each call of a conversation starts with the same system prompt and tools, and what changes per turn follows the history"
+import type { Action, ActionParameterSchema, IAgentRuntime, Memory } from "@elizaos/core"
+
+export interface TurnToolForm {
+  readonly description: string
+  readonly parameters: Readonly<Record<string, ActionParameterSchema>>
+}
+
+export const turnToolForms = new WeakMap<Action, (runtime: IAgentRuntime, message: Memory) => TurnToolForm | undefined>()
+
+export function offeredOnlyWhere(action: Action, home: (runtime: IAgentRuntime, message: Memory) => boolean): void {
+  turnToolForms.set(action, (runtime, message) => home(runtime, message) ? { description: action.description, parameters: {} } : undefined)
+}

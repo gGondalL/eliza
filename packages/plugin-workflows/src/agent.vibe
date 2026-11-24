@@ -2,8 +2,7 @@
 import type { Action, ActionResult, EffectReceipt, HandlerCallback, IAgentRuntime, Memory, Provider } from "@elizaos/core"
 import { createdName, failureReport, workflowListing, type ProposedWorkflowChange, type ReferenceOp } from "../gen/workflow__lifecycle.effect.vibe"
 import { dossierReply, dossierSource, dossierStarts } from "../gen/workflow__hostedDigest.effect.vibe"
-import { typedStepsText } from "./client/workflow-client.vibe"
-import { workflowSha, workflowUuid } from "./contract/phone.vibe"
+import { typedStepsText, workflowSha, workflowUuid } from "@elizaos/plugin-workflow-client"
 import {
   commandBinding, normalizeWorkflowName, ownerWords, ownerZone, resolveWorkflowReference, searchWorkflows,
   type ReferenceOptions, type WorkflowReferenceRefused, type WorkflowView,

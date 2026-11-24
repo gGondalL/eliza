@@ -2,7 +2,7 @@
 import type { ActionParameterSchema } from "@elizaos/core"
 import {
   readResult, type DeviceOperation, type DeviceProposalFamily, type DeviceTurn, type EarlierRequest, type Grounding, type NegotiatedDevice, type ProposalForm, type ProposalText, type ReadContinuation,
-} from "@elizaos/agent/device-actions"
+} from "@elizaos/agent"
 import { askedAvailability, availabilityDayKnown, availabilityWindowed } from "../../gen/calendar__availability.effect.vibe"
 import {
   calendarProposalAdmitted, changedEnd, changeOf, changeReadAdmitted, deleteAsked, editAfterRead, endChangeStated, namedGrounded, newEventStated, ownerWordsKept, preparedEdit,

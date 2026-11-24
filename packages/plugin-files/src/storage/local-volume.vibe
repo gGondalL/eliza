@@ -20,9 +20,10 @@ module node {
 import { identityOf, linked, trashId } from node
 import { apply, canPrune, classifyRow, listed, machineOver, initial as fresh, type TrashRow } from "../../gen/files__reviewedOperations.effect.vibe"
 import { renameOutcome, batchMax, type FilesOp, type FilesRowCheck, type FileOutcome } from "../../gen/os__android__files__storage.effect.vibe"
-import { baseName, downloadsListing, filterMatches, freeName, inCategory, joinPath, listing, mimeFromName, parentOf, validName, validPath, within, DOWNLOAD_FOLDER,
-  type StorageEntry, type TrashEntry } from "./model.vibe"
-import { checkSelection, FilesVolume, succeeded, VolumeRefused, type RowOutcome, type RowStatus } from "./volume.vibe"
+import {
+  baseName, checkSelection, downloadsListing, filterMatches, freeName, inCategory, joinPath, listing, mimeFromName, parentOf, succeeded, validName, validPath, within, DOWNLOAD_FOLDER,
+  FilesVolume, VolumeRefused, type RowOutcome, type RowStatus, type StorageEntry, type TrashEntry,
+} from "@elizaos/plugin-files-client"
 
 const TRASH = ".Trash-files"
 const WALK_LIMIT = 10_000

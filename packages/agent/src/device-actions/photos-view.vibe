@@ -4,8 +4,7 @@ import { shownPhotoTarget } from "../../gen/agent__deviceActions__operations.eff
 import { photosVerdict, type PhotoNaming, type SurfaceVerdict } from "../../gen/agent__deviceActions__surfaces.effect.vibe"
 import type { Observation } from "../conversation/turn-context.schema.vibe"
 import { readOperation, readResult, type CheckedOperation, type DeviceOperation } from "./operations.schema.vibe"
-import type { DeviceTurn, EarlierRequest, Grounding } from "./proposal/family.vibe"
-import type { DeviceStoreUnavailable } from "./store.vibe"
+import type { DeviceStoreUnavailable, DeviceTurn, EarlierRequest, Grounding } from "./proposal/family.vibe"
 
 const photosView = "photos"
 

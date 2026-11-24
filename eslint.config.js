@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs"
+import { readFileSync } from "node:fs"
 import { relative, sep } from "node:path"
 import js from "@eslint/js"
 import react from "@eslint-react/eslint-plugin"
@@ -11,32 +11,27 @@ import tseslint from "typescript-eslint"
 import vibelang from "vibelang/eslint"
 import { designSystem } from "./vibestack/design/eslint.ts"
 import { parseTokens } from "./vibestack/design/tokens.ts"
+import { withWorkspaceBarrels } from "./vibestack/eslint.ts"
 
 const stack = 'AGENTS.md, "The stack"'
 const monorepo = 'CONTRIBUTING.md, "The monorepo"'
 const banned = ["redux", "react-redux", "zustand", "mobx", "jotai", "recoil", "valtio", "xstate", "vue", "svelte", "jest"]
 const scopes = ["reduxjs", "angular", "xstate", "vue", "sveltejs", "jest"]
-// Each workspace package's `exports` beyond its root: "@repo/design-system/theme.css".
-const exported = readdirSync("packages").filter((dir) => existsSync(`packages/${dir}/package.json`)).flatMap((dir) => {
-  const { name, exports = {} } = JSON.parse(readFileSync(`packages/${dir}/package.json`, "utf8"))
-  return Object.keys(exports).filter((key) => key !== ".").map((key) => RegExp.escape(`${name}/${key.slice(2)}`))
-})
 const imports = {
   patterns: [
     // A package, its subpaths and its family: zustand/middleware, redux-saga, @angular/core.
     { regex: `^(?:@(?:${scopes.join("|")})/|(?:${banned.join("|")})(?:[/-]|$))`, message: `Not part of the stack: ${stack}.` },
-    { regex: `^(?!(?:${exported.join("|")})$)@repo/[^/]+/`, message: `Import a workspace package by a path its "exports" names: ${monorepo}.` },
   ],
 }
 const noReact = { patterns: [...imports.patterns, { regex: "^react(?:-dom)?(?:/|$)", message: `Tool and domain code does not import React: ${monorepo}.` }] }
 // What no tsconfig.json includes, so the type-aware rules cannot see it.
 const untyped = ["*.{js,ts}", "**/.storybook/**", "packages/design-system/**", "vibestack/design/test/**", "vibestack/stories/test/**"]
 // Every React interface: Studio's page is built on the same theme (vibestack/studio/vite.config.ts).
-const tsx = ["packages/ui/**/*.{ts,tsx}", "packages/cloud/src/pages/**/*.{ts,tsx}", "apps/**/*.{ts,tsx}", "vibestack/studio/src/page/**/*.{ts,tsx}"]
+const tsx = ["packages/ui/**/*.{ts,tsx}", "packages/cloud-worker/src/pages/**/*.{ts,tsx}", "apps/**/*.{ts,tsx}", "vibestack/studio/src/page/**/*.{ts,tsx}"]
 const design = "packages/design-system"
 const writing = 'AGENTS.md, "Writing code"'
 const citation = String.raw`spec\/\S+\.md, "[^"]+"`
-const suppressible = String.raw`(?!code\/|no-console\b)[\w@/-]+`
+const suppressible = String.raw`(?!code\/|barrel\/|no-console\b)[\w@/-]+`
 const cited = new RegExp(String.raw`^\s*${citation}(?:; ${citation})*\s*$`)
 const suppression = new RegExp(String.raw`^ eslint-disable(?:-next-line|-line)? ${suppressible}(?:, ${suppressible})* -- \S`)
 const configs = [suppression, /^ eslint-enable\b/]
@@ -53,7 +48,7 @@ const guarded = (parser) => ({
   parseForESLint: (text, options) => {
     const parsed = parser.parseForESLint(text, options)
     const loose = parsed.ast.comments.find((comment) => inline.test(comment.value) && !configs.some((form) => form.test(comment.value)))
-    if (loose) throw Object.assign(new SyntaxError(`Inline config here is only "eslint-disable[-next-line|-line] <rule>, … -- <reason>", never for code/* or no-console, and "eslint-enable" (${writing}).`), { lineNumber: loose.loc.start.line, column: loose.loc.start.column + 1 })
+    if (loose) throw Object.assign(new SyntaxError(`Inline config here is only "eslint-disable[-next-line|-line] <rule>, … -- <reason>", never for code/*, barrel/* or no-console, and "eslint-enable" (${writing}).`), { lineNumber: loose.loc.start.line, column: loose.loc.start.column + 1 })
     return parsed
   },
 })
@@ -104,48 +99,38 @@ const commented = {
   "packages/agent/src/client/coordination.vibe": 1,
   "packages/agent/src/client/device-execution.vibe": 1,
   "packages/agent/src/client/index.vibe": 1,
-  "packages/agent/src/conversation/events.vibe": 1,
-  "packages/agent/src/conversation/heard.vibe": 1,
-  "packages/agent/src/conversation/turns.vibe": 2,
-  "packages/agent/src/host/process.vibe": 1,
-  "packages/agent/src/schedule/store.vibe": 3,
+  "packages/agent-host/src/conversation/events.vibe": 1,
+  "packages/agent-host/src/conversation/heard.vibe": 1,
+  "packages/agent-host/src/conversation/turns.vibe": 2,
+  "packages/agent-host/src/host/process.vibe": 1,
+  "packages/agent-host/src/schedule/store.vibe": 3,
   "packages/agent/src/voice/capture.worklet.mjs": 1,
-  "packages/agent/test/schedule-triggers.test.vibe": 1,
-  "packages/cloud/src/google-read.vibe": 1,
-  "packages/cloud/src/services/google/mail-read.vibe": 1,
+  "packages/agent-host/test/schedule-triggers.test.vibe": 1,
+  "packages/cloud-worker/src/google-read.vibe": 1,
+  "packages/cloud-worker/src/services/google/mail-read.vibe": 1,
   "packages/core/src/network/ssrf.vibe": 3,
   "packages/core/src/retrieval.vibe": 21,
   "packages/core/src/security/outbound-sanitize.vibe": 3,
-  "packages/core/src/utils/crypto-compat.vibe": 2,
   "packages/core/src/utils/task-scheduling.vibe": 1,
   "packages/os/test/image-apk.test.vibe": 2,
 }
 const scheduled = {
-  "packages/agent/src/access/socket.vibe": 3,
-  "packages/agent/test/client-runtime.test.vibe": 2,
-  "packages/agent/test/client-tasks.test.vibe": 1,
-  "packages/agent/test/client-turns.test.vibe": 2,
-  "packages/agent/test/device-read-completion.test.vibe": 1,
-  "packages/agent/test/device-telephony.test.vibe": 1,
-  "packages/agent/test/drivers/agent__host__resources.ts": 1,
-  "packages/agent/test/events.test.vibe": 2,
-  "packages/agent/test/http.test.vibe": 2,
-  "packages/agent/test/schedule-triggers.test.vibe": 1,
-  "packages/agent/test/scheduled-tasks.test.vibe": 1,
-  "packages/agent/test/support/audio-fake.ts": 2,
-  "packages/agent/test/support/child.ts": 1,
-  "packages/agent/test/transport.test.vibe": 2,
-  "packages/agent/test/voice-playback.test.vibe": 1,
+  "packages/agent-host/src/access/socket.vibe": 3,
+  "packages/agent-host/test/client-runtime.test.vibe": 2,
+  "packages/agent-host/test/client-tasks.test.vibe": 1,
+  "packages/agent-host/test/client-turns.test.vibe": 2,
+  "packages/agent-host/test/device-read-completion.test.vibe": 1,
+  "packages/agent-host/test/device-telephony.test.vibe": 1,
+  "packages/agent-host/test/events.test.vibe": 2,
+  "packages/agent-host/test/http.test.vibe": 2,
+  "packages/agent-host/test/schedule-triggers.test.vibe": 1,
+  "packages/agent-host/test/scheduled-tasks.test.vibe": 1,
+  "packages/agent-host/test/transport.test.vibe": 2,
   "packages/agent/test/voice-recorded-transcription.test.vibe": 1,
   "packages/cloud/test/support/clock.ts": 1,
   "packages/core/src/runtime/provider-execution.vibe": 1,
   "packages/core/src/services/task.vibe": 6,
   "packages/core/src/utils/retry.vibe": 1,
-  "packages/core/test/support/atomic-json-writer.ts": 1,
-  "packages/core/test/support/models.ts": 2,
-  "packages/os/src/bridges/voice.vibe": 1,
-  "packages/os/test/bridges/messages.test.vibe": 1,
-  "packages/os/test/drivers/os__browser__pageCommands.ts": 1
 }
 const consoleCounts = { "packages/core/src/logger.vibe": 3 }
 
@@ -155,7 +140,7 @@ const coreUnused = { ...unused, ignoreRestSiblings: true }
 // The tool reads Quint's JSON and the TypeScript compiler API as `any` at its boundaries; packages and apps stay strict.
 const loose = Object.fromEntries(["no-explicit-any", "no-unsafe-argument", "no-unsafe-assignment", "no-unsafe-call", "no-unsafe-member-access", "no-unsafe-return"].map((rule) => [`@typescript-eslint/${rule}`, "off"]))
 
-export default defineConfig(
+export default withWorkspaceBarrels(defineConfig(
   // Generated or disposable, .claude/worktrees holds other checkouts of this repository, and os ships the Android, AOSP, browser and Go trees it copies as files.
   globalIgnores(["**/gen/", "!vibestack/gen/", "**/.vibe/", "**/dist/", "**/.cache/", "**/.spec-cache/", "**/generated/", "**/storybook-static/", "**/test/fixtures/", "packages/os/{android,aosp,browser,native}/", "vibestack/examples/", "vibestack/fixtures/", ".claude/", ".lemmascript/", ".studio/", ".turbo/", "_apalache-out/"]),
   { linterOptions: { reportUnusedDisableDirectives: "error", reportUnusedInlineConfigs: "error" } },
@@ -230,7 +215,7 @@ export default defineConfig(
   },
   { files: ["packages/core/**/*.{ts,tsx,vibe,vibex}"], rules: { "no-redeclare": "off", "@typescript-eslint/no-unused-vars": ["error", coreUnused] } },
   { files: ["packages/core/**/*.{vibe,vibex}"], rules: { "no-empty": ["error", { allowEmptyCatch: true }] } },
-  { files: ["packages/agent/**/*.{vibe,vibex}"], rules: { "no-empty": ["error", { allowEmptyCatch: true }] } },
+  { files: ["packages/{agent,agent-host}/**/*.{vibe,vibex}"], rules: { "no-empty": ["error", { allowEmptyCatch: true }] } },
   { files: ["packages/agent/src/access/routes.vibe", "packages/agent/src/client/index.vibe", "packages/agent/src/host/launch.schema.vibe"], rules: { "no-control-regex": "off" } },
   { files: ["packages/**/*.{vibe,vibex}"], rules: { "no-redeclare": "off" } },
   {
@@ -261,13 +246,6 @@ export default defineConfig(
   { files: ["packages/cloud/src/client/relay-frames.ts", "packages/cloud/src/services/sse.ts"], rules: { "@typescript-eslint/no-unused-vars": ["error", { ...unused, args: "none" }], "prefer-const": "off" } },
   { files: ["packages/agent/src/voice/echo-filter.ts"], rules: { "@typescript-eslint/no-unused-vars": ["error", { ...unused, varsIgnorePattern: "^(?:_|echoOverlapPercent$|isEcho$|turnAccepted$)" }] } },
   {
-    files: ["packages/core/src/utils/filesystem.vibe"],
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "no-restricted-syntax": ["error", { selector: 'TSAnyKeyword:not(VibeModuleDeclaration[id.name="edge"] > TSModuleBlock > ExportNamedDeclaration > FunctionDeclaration[id.name="readJsonPromise"] > TSTypeParameterDeclaration > TSTypeParameter[name.name="T"] > TSAnyKeyword.default)', message: "Explicit any is reserved for readJsonPromise's compatibility default." }],
-    },
-  },
-  {
     files: ["packages/core/src/types/service.vibe", "packages/core/src/types/service-interfaces.vibe"],
     rules: { "@typescript-eslint/no-empty-object-type": ["error", { allowWithName: "^(?:ServiceTypeRegistry|StoredPrivateFile)$" }] },
   },
@@ -288,10 +266,10 @@ export default defineConfig(
     files: ["packages/core/src/catalog/loader.vibe"],
     rules: { "no-warning-comments": ["error", { terms: ["todo", "fixme", "deprecated"], location: "anywhere" }] },
   },
-  // React belongs to interfaces: the tools apart from Studio's page, the owners apart from cloud's pages, and schemas, contracts, drivers and the shell everywhere, do without it.
+  // React belongs to interfaces: the tools apart from Studio's page, the owners apart from cloud-worker's pages, and schemas, contracts, drivers and the shell everywhere, do without it.
   {
-    files: ["vibestack/**", "packages/{core,cloud,agent,os}/**", "**/*.{schema,contract}.ts", "**/test/drivers/**", "**/*.vibe"],
-    ignores: ["vibestack/studio/src/page/**", "packages/cloud/src/pages/**"],
+    files: ["vibestack/**", "packages/{core,core-node,cloud,cloud-worker,agent,agent-host,os,os-bridges}/**", "**/*.{schema,contract}.ts", "**/test/drivers/**", "**/*.vibe"],
+    ignores: ["vibestack/studio/src/page/**", "packages/cloud-worker/src/pages/**"],
     rules: { "no-restricted-imports": ["error", noReact] },
   },
   // eslint-plugin-react-hooks owns the rules both plugins ship; @eslint-react adds the rest.
@@ -320,7 +298,7 @@ export default defineConfig(
   { files: own, plugins: { code }, rules: { "no-console": "error", "code/comments": ["error", { left: commented }], "code/effects": ["error", { left: scheduled }] } },
   { files: ["packages/ui/src/components/**"], ignores: ["**/*.meta.tsx"], rules: { "code/comments": ["error", { jsdoc: true, left: commented }] } },
   { files: Object.keys(consoleCounts), rules: { "no-console": "off", "code/console": ["error", { left: consoleCounts }] } },
-)
+), { root: import.meta.dirname })
 
 if (import.meta.main) {
   const { spawn, spawnSync } = await import("node:child_process")
@@ -331,21 +309,32 @@ if (import.meta.main) {
   const packageGroups = [
     [
       "packages/agent",
+      "packages/agent-host",
       "packages/plugin-assistant",
       "packages/plugin-browser",
       "packages/cloud",
+      "packages/cloud-worker",
       "packages/core",
+      "packages/core-node",
       "packages/plugin-localinference",
+      "packages/plugin-localinference-client",
       "packages/os",
+      "packages/os-bridges",
     ],
     [
       "packages/plugin-calendar",
       "packages/plugin-files",
+      "packages/plugin-files-client",
       "packages/plugin-inbox",
+      "packages/plugin-inbox-client",
       "packages/plugin-maps",
+      "packages/plugin-maps-client",
       "packages/plugin-notes",
+      "packages/plugin-notes-client",
       "packages/ui",
       "packages/plugin-workflows",
+      "packages/plugin-workflow-client",
+      "packages/plugin-workflow-worker",
       "vibestack/studio",
     ],
   ]

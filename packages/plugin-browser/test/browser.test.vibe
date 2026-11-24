@@ -2,7 +2,7 @@
 import { assert, it } from "@effect/vitest"
 import type { ActionResult, AgentRuntime, IAgentRuntime, Memory } from "@elizaos/core"
 import { offeredActions } from "@elizaos/agent"
-import { registerDeviceProposalFamily, type DeviceOperation } from "@elizaos/agent/device-actions"
+import { registerDeviceProposalFamily, type DeviceOperation } from "@elizaos/agent"
 import {
   BROWSER_CONTROL_DIRECT_TYPES, BROWSER_FIND_CAPABILITY, BROWSER_NO_TABS_TO_CLOSE_NOTICE, BROWSER_OPEN_NEW_TAB_CAPABILITY, BROWSER_TABS_CAPABILITY,
   BROWSER_TABS_CLOSE_ALL_CAPABILITY, BROWSER_TABS_UNLISTED_NOTICE, browserCloseAllApprovable, browserCloseAllNotice, browserControlCapabilityAvailable,
@@ -218,7 +218,7 @@ it.effect('Go back on the tab the turn observed and say only that the browser wa
 module node {
   import { Effect } from "effect"
   import type { IAgentRuntime } from "@elizaos/core"
-  import { negotiation, readOperation, validate, type DeviceTurn } from "@elizaos/agent/device-actions"
+  import { negotiation, readOperation, validate, type DeviceTurn } from "@elizaos/agent"
   import { browserProposalFamily } from "../src/proposal.vibe"
 
   export const everyBrowserCapability = ["browser.search.v1", "browser.tabs.v1", "browser.tabs.close-all.v1", "browser.find.v1", "browser.history.v1", "browser.open-new-tab.v1"]

@@ -5,7 +5,8 @@ import type { Negotiation, ViewProfile } from "../../../gen/agent__deviceActions
 import type { SessionOwner } from "../../../gen/core__sessions.effect.vibe"
 import { readTurnContext, type Observation } from "../../conversation/turn-context.schema.vibe"
 import type { CheckedOperation, DeviceOperation, DeviceOperationType } from "../operations.schema.vibe"
-import type { DeviceStoreUnavailable } from "../store.vibe"
+
+export error DeviceStoreUnavailable { step: string; cause: unknown }
 
 export type { ProposalGrounding }
 
