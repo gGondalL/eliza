@@ -1,7 +1,7 @@
-// spec/agent/views.md, "The agent prepares a navigation only for the renderer bound to its turn and one view its name resolves to"; spec/agent/deviceActions/surfaces.md, "An app view opens with VIEWS where views arrive as completed actions, else with open_view as the installation's profile enables it"; spec/agent/conversation/planning.md, "An action may narrow its tool to the turn, never beyond its registered form"; spec/agent/conversation/planning.md, "A call this message serves in another place is refused before it runs, and is no step of the turn"
-import { readViewInteractionClientId, type Action, type ActionResult, type Memory } from "@elizaos/core"
+// spec/agent/views.md, "The agent prepares a navigation only for the renderer bound to its turn and one view its name resolves to"; spec/agent/views.md, "A show of Notes may name one saved note, only on a renderer that opens its editor and only while the agent's Notes hold it"; spec/agent/deviceActions/surfaces.md, "An app view opens with VIEWS where views arrive as completed actions, else with open_view as the installation's profile enables it"; spec/agent/conversation/planning.md, "An action may narrow its tool to the turn, never beyond its registered form"; spec/agent/conversation/planning.md, "A call this message serves in another place is refused before it runs, and is no step of the turn"
+import { readViewInteractionClientId, type Action, type ActionResult, type IAgentRuntime, type Memory } from "@elizaos/core"
 import { viewsShowsOnDevice } from "../../gen/agent__deviceActions__surfaces.ts"
-import { declaredAt } from "../../gen/agent__views.effect.vibe"
+import { declaredAt, noteTarget, targets, type NoteTarget } from "../../gen/agent__views.effect.vibe"
 import { turnElsewhere } from "../conversation/planning.vibe"
 import { deviceTurnFor } from "../device-actions/proposal/turn.vibe"
 import { foldName } from "./declarations.vibe"
@@ -22,19 +22,69 @@ function rendererOf(message: Memory): string | undefined {
   return completedAction ? readViewInteractionClientId(message) : undefined
 }
 
-function targetOf(options: unknown): string | undefined {
+function parametersOf(options: unknown): object | undefined {
   if (typeof options !== "object" || options === null || !("parameters" in options)) return undefined
   const parameters = options.parameters
-  if (typeof parameters !== "object" || parameters === null || !("view" in parameters) || typeof parameters.view !== "string") return undefined
+  return typeof parameters === "object" && parameters !== null ? parameters : undefined
+}
+
+function targetOf(parameters: object | undefined): string | undefined {
+  if (parameters === undefined || !("view" in parameters) || typeof parameters.view !== "string") return undefined
   const target = foldName(parameters.view)
   return target === "" ? undefined : target
 }
 
-effect function show(views: ViewHost.Shape, labels: ReadonlyMap<string, string>, message: Memory, options: unknown) {
+const noteIdPattern = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/
+
+type NoteRequest = { readonly kind: "list" } | { readonly kind: "note"; readonly noteId: string } | { readonly kind: "invalid" }
+
+function noteRequestOf(parameters: object | undefined): NoteRequest {
+  const noteId = parameters !== undefined && "noteId" in parameters ? parameters.noteId : undefined
+  if (noteId === undefined || noteId === null || noteId === "") return { kind: "list" }
+  return typeof noteId === "string" && noteIdPattern.test(noteId) ? { kind: "note", noteId } : { kind: "invalid" }
+}
+
+function opensNoteEditor(message: Memory): boolean {
+  const metadata = message.content.metadata
+  return typeof metadata === "object" && metadata !== null && "notesEditorNavigation" in metadata && metadata.notesEditorNavigation === 1
+}
+
+interface SavedNotes { snapshot(): Promise<{ readonly notes: readonly { readonly id: string }[] }> }
+
+function savedNotesOf(found: unknown): SavedNotes | undefined {
+  return typeof found === "object" && found !== null && "snapshot" in found && typeof found.snapshot === "function" ? found as SavedNotes : undefined
+}
+
+effect function holdsNote(runtime: IAgentRuntime, noteId: string) {
+  const notes = savedNotesOf(runtime.getService("notes"))
+  if (notes === undefined) return undefined
+  const snapshot = tryPromise(() => notes.snapshot()) catch () => undefined
+  return snapshot === undefined ? undefined : snapshot.notes.some((note) => note.id === noteId)
+}
+
+const noteRefusals: Readonly<Record<Exclude<NoteTarget, "NoteOpens">, string>> = {
+  NoteOnlyInNotes: "A saved note's id only opens its editor in Notes.",
+  NoteEditorUnsupported: "This screen cannot open a saved note's editor, so nothing was shown. Show the Notes list instead.",
+  NotesUnreadable: "Saved Notes are unavailable, so the note was not opened.",
+  NoteNotSaved: "That saved note is no longer available. Look it up with NOTES again before opening it.",
+}
+
+effect function show(views: ViewHost.Shape, labels: ReadonlyMap<string, string>, runtime: IAgentRuntime, message: Memory, options: unknown) {
   const clientId = rendererOf(message)
   if (clientId === undefined) return refused("No renderer is bound to this turn, so no view can be shown.")
-  const target = targetOf(options)
+  const parameters = parametersOf(options)
+  const target = targetOf(parameters)
   if (target === undefined) return refused("Name the view to show by its id, label or alias.")
+  const note = noteRequestOf(parameters)
+  if (note.kind === "invalid") return refused("A saved note's id is the exact noteId a NOTES read returned.")
+  if (note.kind === "note") {
+    const named = targets(try views.current(), target)
+    const viewId = named.length === 1 ? named[0].viewId : ""
+    const advertised = opensNoteEditor(message)
+    const saved = viewId === "notes" && advertised ? try holdsNote(runtime, note.noteId) : false
+    const checked = noteTarget(viewId, advertised, saved !== undefined, saved === true)
+    if (checked !== "NoteOpens") return refused(noteRefusals[checked])
+  }
   const requestId = newRequestId()
   const pending = try views.show(requestId, clientId, target)
   if (pending === undefined) return refused(`No single view named "${target}" can be shown now.`)
@@ -52,6 +102,7 @@ effect function show(views: ViewHost.Shape, labels: ReadonlyMap<string, string>,
       mode: "show", viewId: view.viewId, viewPath: view.path, viewType: "gui", label,
       completedActionDelivered: false, completedActionHandoffId: requestId, navigationPrepared: true,
       navigationBinding: { requestId, clientId, viewId: view.viewId, viewType: "gui", installationId: view.installationId },
+      ...(note.kind === "note" ? { noteId: note.noteId } : {}),
     },
   } satisfies ActionResult
 }
@@ -65,17 +116,23 @@ export function viewsShowAction(views: ViewHost.Shape, labels: ReadonlyMap<strin
   const action: Action = {
     name: "VIEWS",
     similes: ["VIEWS_SHOW", "OPEN_VIEW", "NAVIGATE_VIEW"],
-    description: "Show one of the owner's views, named by its id, label or alias, on the renderer of this turn. Navigation only: it does not read or change the view's records.",
+    description: "Show one of the owner's views, named by its id, label or alias, on the renderer of this turn. Navigation only: it does not read or change the view's records. To open one saved note's editor, first find exactly that note with NOTES, then show Notes with its noteId; if several notes match, ask which one.",
     roleGate: { minRole: "OWNER" },
     parameters: [
       { name: "action", description: "show", required: false, schema: { type: "string", enum: ["show"] } },
       { name: "view", description: "The view's id, label or alias", required: true, schema: { type: "string" } },
+      {
+        name: "noteId",
+        description: "Only with view Notes, when the owner asked to open one particular saved note: the exact noteId of the one note a NOTES read or save returned. Never derived from a title. Omit to show the Notes list or when the owner only asked to read a note.",
+        required: false,
+        schema: { type: "string", pattern: noteIdPattern.source },
+      },
     ],
     validate: async (runtime, message) => {
       const turn = deviceTurnFor(runtime, message)
       return rendererOf(message) !== undefined && (turn === undefined || viewsShowsOnDevice(turn.completedActionNavigation))
     },
-    handler: (_runtime, message, _state, options) => runPromise(show(views, labels, message, options)),
+    handler: (runtime, message, _state, options) => runPromise(show(views, labels, runtime, message, options)),
   }
   turnElsewhere.set(action, (runtime, message) => {
     const turn = deviceTurnFor(runtime, message)

@@ -1,8 +1,9 @@
 // spec/agent/conversation/planning.md, "An identical call runs at most once per model response, and a settled effect is never repeated in the turn"
 // spec/agent/views.md, "Story: Switch to the view the agent named"; spec/agent/views.md, "Story: Answer what the agent asks a view"; spec/agent/views.md, "Story: Stop waiting when my agent stops"
 import { assert, it } from "@effect/vitest"
-import { findViewActionHandoff, type Action, type ActionResult, type Memory, type UUID } from "@elizaos/core"
+import { findViewActionHandoff, Service, type Action, type ActionResult, type IAgentRuntime, type Memory, type UUID } from "@elizaos/core"
 import { navigationBusyWaitMs, navigationClaimLeaseMs, navigationWaitMs } from "../gen/agent__views.effect.vibe"
+import type { AgentPlugin } from "../src/host/module.vibe"
 import type { ViewBinding, ViewHost } from "../src/views/host.vibe"
 import { viewHostServiceType, viewsModuleName } from "../src/views/module.vibe"
 import { text, toolCalls } from "./support/cloud-fake.ts"
@@ -232,4 +233,72 @@ it.effect('The VIEWS show action prepares a navigation for the turn\'s renderer 
     assert.deepStrictEqual(switched.body, { ok: true, accepted: true })
     assert.strictEqual(now, "notes")
   })
+}, 120_000)
+
+class FixtureNotes extends Service {
+  static override serviceType = "notes"
+  override capabilityDescription = "Saved notes for the exact-note journey"
+
+  static override start(runtime: IAgentRuntime): Promise<Service> {
+    return Promise.resolve(new FixtureNotes(runtime))
+  }
+
+  snapshot(): Promise<{ readonly notes: readonly { readonly id: string; readonly title: string }[] }> {
+    return Promise.resolve({ notes: [{ id: "note-groceries", title: "Groceries" }, { id: "note-recipes", title: "Recipes" }] })
+  }
+
+  override stop(): Promise<void> {
+    return Promise.resolve()
+  }
+}
+
+const notesFixture = { name: "notes-fixture", description: "Registers saved notes for the exact-note journey.", services: [FixtureNotes] } satisfies AgentPlugin
+const withNotes = { launch: { ...loaded.launch, load: [viewsModuleName, notesFixture.name] }, bundled: new Map<string, AgentPlugin>([[notesFixture.name, notesFixture]]) }
+
+effect function showNote(agent: InProcess, message: Memory, view: string, noteId: string) {
+  const action = agent.agent.runtime.actions.find((candidate: Action) => candidate.name === "VIEWS")
+  return try host(`VIEWS show ${view} note`, async () => {
+    assert.isDefined(action)
+    return (await action!.handler(agent.agent.runtime, message, undefined, { parameters: { action: "show", view, noteId } })) as ActionResult
+  })
+}
+
+it.effect('A show of Notes opens one saved note only on a renderer that opens its editor and only while the agent\'s Notes hold it (spec/agent/views.md, "A show of Notes may name one saved note, only on a renderer that opens its editor and only while the agent\'s Notes hold it")', effect () => {
+  const agent = try startInProcess(withNotes)
+  try host("notes fixture start", () => agent.agent.runtime.getServiceLoadPromise("notes"))
+  const editor = turn({ viewClientId: "c3", viewDelivery: "completed-action", notesEditorNavigation: 1 })
+  const opened = try showNote(agent, editor, "Notes", "note-groceries")
+  const values = opened.values as Record<string, unknown>
+  const handoff = try Effect.try(() => findViewActionHandoff([{ ...opened, actionName: "VIEWS" }]))
+  const list = try show(agent, editor, "notes")
+  const blank = try showNote(agent, editor, "notes", "")
+  const gone = try showNote(agent, editor, "notes", "note-deleted")
+  const listOnly = try showNote(agent, turn({ viewClientId: "c3", viewDelivery: "completed-action" }), "notes", "note-groceries")
+  const otherView = try showNote(agent, editor, "chat", "note-groceries")
+  const title = try showNote(agent, editor, "notes", "Groceries list")
+  try Effect.try(() => {
+    assert.isTrue(opened.success)
+    assert.strictEqual(values.noteId, "note-groceries")
+    assert.deepStrictEqual(Object.keys(values).sort(), [
+      "completedActionDelivered", "completedActionHandoffId", "label", "mode", "navigationBinding", "navigationPrepared", "noteId", "viewId", "viewPath", "viewType",
+    ])
+    assert.strictEqual(values.viewId, "notes")
+    assert.deepStrictEqual(handoff?.navigationBinding, values.navigationBinding)
+    assert.deepStrictEqual([list.success, blank.success], [true, true])
+    assert.notProperty(list.values, "noteId")
+    assert.notProperty(blank.values, "noteId")
+    assert.deepStrictEqual([gone.success, listOnly.success, otherView.success, title.success], [false, false, false, false])
+    assert.deepStrictEqual([gone.text, listOnly.text, otherView.text, title.text], [
+      "That saved note is no longer available. Look it up with NOTES again before opening it.",
+      "This screen cannot open a saved note's editor, so nothing was shown. Show the Notes list instead.",
+      "A saved note's id only opens its editor in Notes.",
+      "A saved note's id is the exact noteId a NOTES read returned.",
+    ])
+  })
+}, 120_000)
+
+it.effect('A note show with no Notes service to read is refused as unavailable (spec/agent/views.md, "A show of Notes may name one saved note, only on a renderer that opens its editor and only while the agent\'s Notes hold it")', effect () => {
+  const agent = try startInProcess(loaded)
+  const refused = try showNote(agent, turn({ viewClientId: "c4", viewDelivery: "completed-action", notesEditorNavigation: 1 }), "notes", "note-groceries")
+  try Effect.try(() => assert.deepStrictEqual([refused.success, refused.text], [false, "Saved Notes are unavailable, so the note was not opened."]))
 }, 120_000)
