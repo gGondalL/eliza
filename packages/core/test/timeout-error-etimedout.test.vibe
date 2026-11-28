@@ -1,0 +1,10 @@
+// spec/core/protocols.md, "Story: Share canonical values across hosts and plugins"
+import { assert, it } from "@effect/vitest"
+import { isTimeoutError } from "../src/utils/errors.vibe"
+
+it("ETIMEDOUT is recognized as a timeout (spec/core/protocols.md, \"Story: Share canonical values across hosts and plugins\")", () => {
+  assert.strictEqual(isTimeoutError(new Error("ETIMEDOUT")), true)
+  assert.strictEqual(isTimeoutError(new Error("etimedout")), true)
+  assert.strictEqual(isTimeoutError(new Error("request timed out")), true)
+  assert.strictEqual(isTimeoutError(new Error("something else")), false)
+})

@@ -64,12 +64,18 @@ export const formatErrorWithStack = formatDiagnosticError
 export function isTimeoutError(error: unknown): boolean {
   const name = readDiagnosticProperty(error, "name")
   if (name === "TimeoutError" || name === "AbortError") return true
+  const code = readDiagnosticProperty(error, "code")
+  if (typeof code === "string" && /timedout/i.test(code)) return true
   const message = typeof error === "string"
     ? error
     : readDiagnosticProperty(error, "message")
   if (typeof message !== "string") return false
   const normalized = message.toLowerCase()
-  return normalized.includes("timed out") || normalized.includes("timeout")
+  return (
+    normalized.includes("timed out")
+    || normalized.includes("timeout")
+    || normalized.includes("timedout")
+  )
 }
 
 export function isRedirectResponse(response: Response): boolean {
