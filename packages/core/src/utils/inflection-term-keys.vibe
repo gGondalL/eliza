@@ -11,6 +11,12 @@ export function inflectionTermKeys(term: string): string[] {
     base = base.slice(0, -1)
   }
   keys.add(base)
+  // A plural built with -es after a sibilant keeps a stem one character
+  // shorter than the naive trailing-s strip (boxes -> box, not boxe).
+  // Keep the naive key too so ambiguous forms (e.g. houses) still match.
+  if (lower.length >= 5 && /(?:[sxz]|ch|sh)es$/.test(lower)) {
+    keys.add(lower.slice(0, -2))
+  }
   for (const suffix of ["ing", "ed"]) {
     if (base.length < suffix.length + 2 || !base.endsWith(suffix)) continue
     const stem = base.slice(0, -suffix.length)

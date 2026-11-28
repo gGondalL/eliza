@@ -1,0 +1,17 @@
+// spec/core/protocols.md, "Story: Share canonical values across hosts and plugins"
+import { assert, it } from "@effect/vitest"
+import { inflectionTermKeys } from "../src/utils/inflection-term-keys.vibe"
+
+it("Sibilant plurals keep their singular stem (spec/core/protocols.md, \"Story: Share canonical values across hosts and plugins\")", () => {
+  const cases = [
+    ["boxes", "box"],
+    ["buses", "bus"],
+    ["watches", "watch"],
+    ["dishes", "dish"],
+    ["classes", "class"],
+  ] as const
+  const missing = cases
+    .filter(([plural, singular]) => !inflectionTermKeys(plural).includes(singular))
+    .map(([plural]) => plural)
+  assert.deepStrictEqual(missing, [])
+})
